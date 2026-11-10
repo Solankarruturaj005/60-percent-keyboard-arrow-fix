@@ -21,14 +21,41 @@ jobs:
       - name: Validate AutoHotkey v2 Syntax
         shell: powershell
         run: |
-          $ahk = "C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe"
-          if (-not (Test-Path $ahk)) {
-            $ahk = (Get-Command AutoHotkey64.exe, AutoHotkey.exe).Source
+          # 1. Check known install locations for AutoHotkey v2
+          $candidates = @(
+            "C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe",
+            "C:\Program Files\AutoHotkey\AutoHotkey64.exe",
+            "C:\ProgramData\chocolatey\bin\AutoHotkey64.exe",
+            "C:\ProgramData\chocolatey\bin\AutoHotkey.exe"
+          )
+
+          $ahk = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+          # 2. Fall back to Get-Command safely with -ErrorAction SilentlyContinue
+          if (-not $ahk) {
+            $cmd = Get-Command AutoHotkey64.exe, AutoHotkey.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($cmd) { $ahk = $cmd.Source }
           }
-          Write-Host "Validating with: $ahk"
-          & $ahk /validate "60percent_navigation.ahk"
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Syntax validation failed!"
+
+          if (-not $ahk) {
+            Write-Error "AutoHotkey executable could not be found!"
             exit 1
           }
+
+          Write-Host "Validating with: $ahk"
+          & $ahk --version
+
+          # 3. Validate with /validate and /ErrorStdOut to capture output in CI logs
+          $output = & $ahk /validate /ErrorStdOut "60percent_navigation.ahk" 2>&1
+          $exitCode = $LASTEXITCODE
+
+          if ($output) {
+            Write-Host $output
+          }
+
+          if ($exitCode -ne 0) {
+            Write-Error "Syntax validation failed with exit code $exitCode!"
+            exit 1
+          }
+
           Write-Host "AutoHotkey script syntax is 100% valid!"
