@@ -126,9 +126,10 @@ When the layer is enabled, **`Caps Lock`** becomes an intuitive momentary modifi
 
 ---
 
-## 🛠️ Ant Esports MK1500 Mini Reference Guide
+## 🛠️ Hardware & Troubleshooting Guides
 
-If you are using this specifically on the **Ant Esports MK1500 Mini**, check out our complete hardware documentation in [`docs/MK1500_Mini_Hardware_Guide.md`](docs/MK1500_Mini_Hardware_Guide.md).
+* **Detailed Troubleshooting & Diagnostics:** Check out [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) for full root-cause analysis, sleep/disconnect fixes, and testing checklist.
+* **Ant Esports MK1500 Mini Hardware Guide:** Check out [`docs/MK1500_Mini_Hardware_Guide.md`](docs/MK1500_Mini_Hardware_Guide.md) for complete hardware documentation, Bluetooth profiles, and RGB shortcuts.
 
 ### Quick MK1500 Mini Summary:
 * **Why does plugging in USB only charge the keyboard?**  
