@@ -3,7 +3,8 @@
     1-Click Installer for 60% Keyboard Navigation & Arrow Fix
 .DESCRIPTION
     Installs AutoHotkey v2 (if missing via winget), registers the navigation script
-    into the Windows Startup folder, and starts the layer immediately.
+    into the Windows Startup folder, and starts the layer in dormant mode.
+    Toggle the layer anytime with: Win + CapsLock or Ctrl + Shift + CapsLock.
     Supports both local execution and remote one-liner execution:
     irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/install.ps1 | iex
 #>
@@ -102,10 +103,15 @@ Start-Sleep -Milliseconds 500
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "  Installation Successful! The layer is now active!       " -ForegroundColor Green
+Write-Host "  Installation Successful! The layer is ready in standby. " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Quick Cheatsheet (Hold CapsLock):" -ForegroundColor Yellow
+Write-Host "Master Keyboard Switch:" -ForegroundColor Yellow
+Write-Host "  Press Win + CapsLock (or Ctrl + Shift + CapsLock) to TOGGLE the layer ON / OFF." -ForegroundColor Yellow
+Write-Host "  When OFF: 100% normal stock keyboard behavior."
+Write-Host "  When ON: Full 60% navigation layer is active!"
+Write-Host ""
+Write-Host "Quick Cheatsheet (When Layer is ON & Holding CapsLock):" -ForegroundColor Cyan
 Write-Host "  CapsLock + I / J / K / L  ->  Up / Left / Down / Right (Home Row)"
 Write-Host "  CapsLock + W / A / S / D  ->  Up / Left / Down / Right (WASD)"
 Write-Host "  CapsLock + 1 .. =         ->  F1 .. F12 (Function Row)"
@@ -116,5 +122,5 @@ Write-Host "  CapsLock + H / N          ->  PageUp / PageDown"
 Write-Host "  CapsLock + Backspace      ->  Delete"
 Write-Host "  Tap CapsLock alone        ->  Toggle CapsLock (shows Windows 11 translucent pill)"
 Write-Host ""
-Write-Host "You never need to hold Fn+O again! Enjoy coding." -ForegroundColor Cyan
+Write-Host "Enjoy coding on your 60% keyboard!" -ForegroundColor Green
 Write-Host ""

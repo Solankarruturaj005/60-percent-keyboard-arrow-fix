@@ -4,15 +4,12 @@
 ; ==============================================================================
 ; 60% Keyboard Navigation & Productivity Layer (Universal & MK1500 Mini Fix)
 ; ==============================================================================
-; Solves the classic 60% keyboard limitations for programmers:
-;   1. Missing arrow keys (without toggling Fn+O or locking '/ ?', 'Alt', 'Ctrl')
-;   2. Missing F1-F12 function row
-;   3. Missing media/volume controls
-;   4. Missing forward Delete, Home, End, PageUp, PageDown
-;   5. Esc vs. Backtick / Tilde conflict
-;   6. Windows 11 Native Translucent Pill Navbar OSD (Bottom-Centered)
+; MASTER KEYBOARD TOGGLE:
+;   Press Win + CapsLock (or Ctrl + Shift + CapsLock) to toggle the layer ON / OFF.
+;   - When DISABLED (default on boot): Script is dormant. 100% normal stock keyboard.
+;   - When ENABLED: CapsLock navigation, smart tap, F-keys, and media layer are active.
 ;
-; SHORTCUTS (While HOLDING CapsLock):
+; SHORTCUTS (While Layer is ENABLED & HOLDING CapsLock):
 ; ------------------------------------------------------------------------------
 ;   I / J / K / L       -->  Up / Left / Down / Right  (Right-hand Home Row)
 ;   W / A / S / D       -->  Up / Left / Down / Right  (Left-hand / Mouse mode)
@@ -33,17 +30,17 @@
 ;   Ctrl + CapsLock + [J/L]           -->  Jump whole words left/right
 ;   Ctrl + Shift + CapsLock + [J/L]   -->  Select whole words
 ;
-; NORMAL CAPSLOCK FUNCTION:
+; NORMAL CAPSLOCK FUNCTION (While Layer is ENABLED):
 ;   - Quick tap of CapsLock toggles CAPS LOCK ON / OFF.
 ;   - Or press Shift + CapsLock to toggle CAPS LOCK.
-;   - Displays a modern Windows 11 translucent pill notification at bottom-center.
+;   - Displays a Windows 11 translucent pill navbar at bottom-center of screen.
 ; ==============================================================================
 
-; --- Settings & State ---
-global showNotification := true
+; --- State & Sizing ---
+global isLayerActive := false
 global pillGui := ""
 global textCtrl := ""
-global pillWidth := 240
+global pillWidth := 250
 global pillHeight := 46
 
 InitPillGui() {
@@ -60,40 +57,45 @@ InitPillGui() {
     ; Translucent dark glass opacity
     WinSetTransparent(225, pillGui.Hwnd)
     
-    pillGui.SetFont("s11 bold c67e8f9", "Segoe UI")
+    pillGui.SetFont("s11 bold cWhite", "Segoe UI")
     textCtrl := pillGui.Add("Text", "Center x0 y12 w" . pillWidth . " h" . (pillHeight - 12))
 }
 
-ShowCapsNotification(state) {
-    global pillGui, textCtrl, showNotification, pillWidth, pillHeight
-    if (!showNotification)
-        return
-        
+ShowPillOSD(text, colorHex := "38bdf8", durationMs := 1300) {
+    global pillGui, textCtrl, pillWidth, pillHeight
     if (!pillGui)
         InitPillGui()
         
-    if (state) {
-        textCtrl.SetFont("c38bdf8") ; Soft cyan accent for ON
-        textCtrl.Value := "🔒  CapsLock: ON"
-    } else {
-        textCtrl.SetFont("c94a3b8") ; Muted silver for OFF
-        textCtrl.Value := "🔓  CapsLock: OFF"
-    }
+    textCtrl.SetFont("c" . colorHex)
+    textCtrl.Value := text
     
     posX := (A_ScreenWidth - pillWidth) // 2
     posY := A_ScreenHeight - pillHeight - 90 ; Bottom-centered above taskbar
     
     pillGui.Show("x" . posX . " y" . posY . " w" . pillWidth . " h" . pillHeight . " NoActivate")
-    SetTimer(() => pillGui.Hide(), -1300)
+    SetTimer(() => pillGui.Hide(), -durationMs)
+}
+
+ToggleMasterLayer() {
+    global isLayerActive := !isLayerActive
+    if (isLayerActive) {
+        SetCapsLockState "AlwaysOff"
+        Suspend(false)
+        ShowPillOSD("⚡ 60% Layer: ENABLED", "38bdf8")
+    } else {
+        SetCapsLockState "Off"
+        Suspend(true)
+        ShowPillOSD("💤 60% Layer: DISABLED", "94a3b8")
+    }
 }
 
 ToggleCapsState() {
     if GetKeyState("CapsLock", "T") {
         SetCapsLockState "AlwaysOff"
-        ShowCapsNotification(false)
+        ShowPillOSD("🔓  CapsLock: OFF", "94a3b8")
     } else {
         SetCapsLockState "AlwaysOn"
-        ShowCapsNotification(true)
+        ShowPillOSD("🔒  CapsLock: ON", "38bdf8")
     }
 }
 
@@ -101,13 +103,12 @@ ToggleCapsState() {
 SetupTrayMenu() {
     tray := A_TrayMenu
     tray.Delete()
-    tray.Add("60% Keyboard Navigation Layer (Active)", (*) => OpenGitHub())
-    tray.Disable("60% Keyboard Navigation Layer (Active)")
+    tray.Add("60% Keyboard Navigation Layer", (*) => OpenGitHub())
+    tray.Disable("60% Keyboard Navigation Layer")
     tray.Add()
+    tray.Add("Toggle Layer (Win + CapsLock)", (*) => ToggleMasterLayer())
     tray.Add("View Cheatsheet / GitHub", (*) => OpenGitHub())
-    tray.Add("Toggle CapsLock Notification Pill", (*) => ToggleNotificationOption())
     tray.Add()
-    tray.Add("Suspend Hotkeys", (*) => Suspend(-1))
     tray.Add("Reload Script", (*) => Reload())
     tray.Add("Exit", (*) => ExitApp())
 }
@@ -116,18 +117,20 @@ OpenGitHub() {
     Run("https://github.com/Solankarruturaj005/60-percent-keyboard-arrow-fix")
 }
 
-ToggleNotificationOption() {
-    global showNotification := !showNotification
-    statusText := showNotification ? "Enabled" : "Disabled"
-    ToolTip("Caps Lock Pill: " . statusText)
-    SetTimer(() => ToolTip(), -1000)
-}
-
 SetupTrayMenu()
-A_IconTip := "60% Keyboard Navigation Layer`nHold CapsLock + IJKL for Arrows`nHold CapsLock + 1..= for F1..F12"
+A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/OFF"
 
-; Prevent accidental toggling of CapsLock when starting to hold it
-SetCapsLockState "AlwaysOff"
+; ------------------------------------------------------------------------------
+; Master Keyboard Toggle Shortcuts (Always Active even when suspended)
+; ------------------------------------------------------------------------------
+#SuspendExempt True
+#CapsLock::ToggleMasterLayer()
+^+CapsLock::ToggleMasterLayer()
+#SuspendExempt False
+
+; ------------------------------------------------------------------------------
+; Navigation Layer Hotkeys (Only active when layer is ENABLED)
+; ------------------------------------------------------------------------------
 
 ; Shift + CapsLock toggles original CapsLock state
 +CapsLock::ToggleCapsState()
@@ -141,9 +144,6 @@ SetCapsLockState "AlwaysOff"
         ToggleCapsState()
 }
 
-; ------------------------------------------------------------------------------
-; Navigation Layer: Active only while CapsLock is physically held down
-; ------------------------------------------------------------------------------
 #HotIf GetKeyState("CapsLock", "P")
 
 ; --- Right-hand Arrow Keys (Home Row) ---
@@ -188,3 +188,6 @@ SetCapsLockState "AlwaysOff"
 *\::SendInput("{Blind}{Volume_Mute}")
 
 #HotIf
+
+; Start dormant by default (normal keyboard working as it is until enabled)
+Suspend(true)

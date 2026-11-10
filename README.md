@@ -9,7 +9,7 @@ A lightweight, zero-latency navigation and productivity layer for **60% form fac
 
 Solves the classic 60% keyboard flaw where accessing arrow keys requires clumsy hardware toggles (like holding `Fn + O` for 3 seconds) that lock out essential programming keys like **`/?`**, **`Alt`**, and **`Ctrl`**.
 
-Includes a **Windows 11-style translucent acrylic pill navbar** centered at the bottom of the screen (matching the native volume flyout design) so you always know your Caps Lock status at a glance without image dependencies.
+Features an **on-demand Master Keyboard Switch** (`Win + CapsLock`) with a **Windows 11 translucent acrylic pill navbar** centered at the bottom of the screen.
 
 ---
 
@@ -23,8 +23,22 @@ irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arr
 
 > **What this does:**
 > 1. Detects or automatically installs AutoHotkey v2 via `winget`.
-> 2. Adds the navigation script to your Windows Startup folder.
-> 3. Starts the script immediately—it works in seconds without restarting!
+> 2. Adds the navigation script to your Windows Startup folder in standby.
+> 3. Starts immediately—press **`Win + CapsLock`** anytime to turn the layer ON or OFF!
+
+---
+
+## 🔘 Master Keyboard Switch (On / Off Anytime)
+
+You have full control over when the navigation layer is active:
+
+| Shortcut | Action | Visual OSD Feedback |
+| :--- | :--- | :--- |
+| **`Win` + `CapsLock`** | **Toggle Layer ON / OFF** | `⚡ 60% Layer: ENABLED` / `💤 60% Layer: DISABLED` |
+| **`Ctrl` + `Shift` + `CapsLock`** | **Alternate Toggle** | `⚡ 60% Layer: ENABLED` / `💤 60% Layer: DISABLED` |
+
+* **When DISABLED (Standby):** The script is completely dormant. Your keyboard behaves 100% like a normal, stock keyboard with zero key interception.
+* **When ENABLED:** Full navigation, arrows, F-keys, and media controls are instantly active.
 
 ---
 
@@ -46,7 +60,7 @@ Most 60% keyboards lack dedicated arrow keys. Manufacturers attempt to solve thi
 
 Keep your keyboard in **NORMAL MODE permanently** (never toggle `Fn + O` again). Your **`/?`**, **`Ctrl`**, and **`Alt`** keys remain 100% functional at all times.
 
-This script transforms the rarely-used **`Caps Lock`** key into an intuitive momentary modifier:
+When the layer is enabled, **`Caps Lock`** becomes an intuitive momentary modifier:
 
 ```
 +-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+
@@ -66,7 +80,7 @@ This script transforms the rarely-used **`Caps Lock`** key into an intuitive mom
 
 ---
 
-## 🎮 Navigation Cheatsheet
+## 🎮 Navigation Cheatsheet (When Layer is Enabled)
 
 ### 1. Directional Navigation (While HOLDING `Caps Lock`)
 
@@ -104,7 +118,7 @@ This script transforms the rarely-used **`Caps Lock`** key into an intuitive mom
 
 * **Quick tap** on `Caps Lock` alone toggles CAPS LOCK ON / OFF.
 * Or press **`Shift` + `Caps Lock`** to toggle CAPS LOCK.
-* **Translucent Acrylic Pill Navbar:** When toggled, a sleek translucent acrylic navbar pops up at the bottom-center of your screen (matching the Windows 11 system flyout design):
+* **Translucent Acrylic Pill Navbar:** When toggled, a sleek translucent acrylic navbar pops up at the bottom-center of your screen:
   * **ON:** `🔒 CapsLock: ON` (crisp cyan accent text)
   * **OFF:** `🔓 CapsLock: OFF` (muted silver text)
 * Completely click-through (`+E0x20`), zero-focus stealing (`+NA`), and auto-dismisses after 1.2s.
@@ -132,12 +146,10 @@ If you are using this specifically on the **Ant Esports MK1500 Mini**, check out
 ## ⚙️ Customization & System Tray
 
 Right-click the green **`H`** icon in your Windows taskbar notification area (near the clock) to:
+* **Toggle Layer (Win + CapsLock)**
 * **View Cheatsheet / GitHub Repo**
-* **Toggle CapsLock Notification Pill** (enable or disable)
-* **Suspend Hotkeys** (temporarily disable navigation layer)
 * **Reload Script**
-
-Want to edit shortcuts? Simply open [`60percent_navigation.ahk`](60percent_navigation.ahk) in VS Code or Notepad, edit any mapping, and select **Reload Script** from the tray icon.
+* **Exit**
 
 ---
 
