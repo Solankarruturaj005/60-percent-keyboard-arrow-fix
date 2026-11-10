@@ -38,6 +38,7 @@
 
 ; --- State & Sizing ---
 global isLayerActive := false
+global ignoreNextCapsUp := false
 global pillGui := ""
 global textCtrl := ""
 global pillWidth := 250
@@ -77,16 +78,19 @@ ShowPillOSD(text, colorHex := "38bdf8", durationMs := 1300) {
 }
 
 ToggleMasterLayer() {
-    global isLayerActive := !isLayerActive
+    global isLayerActive := !isLayerActive, ignoreNextCapsUp := true
     if (isLayerActive) {
+        ; Explicitly ensure CapsLock is OFF when activating
         SetCapsLockState "AlwaysOff"
         Suspend(false)
         ShowPillOSD("⚡ 60% Layer: ENABLED", "38bdf8")
     } else {
+        ; Restore normal keyboard mode, ensuring CapsLock is in clean OFF state
         SetCapsLockState "Off"
         Suspend(true)
         ShowPillOSD("💤 60% Layer: DISABLED", "94a3b8")
     }
+    KeyWait("CapsLock", "T1") ; Wait for physical release so it never triggers a tap
 }
 
 ToggleCapsState() {
@@ -124,8 +128,8 @@ A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/O
 ; Master Keyboard Toggle Shortcuts (Always Active even when suspended)
 ; ------------------------------------------------------------------------------
 #SuspendExempt True
-#CapsLock::ToggleMasterLayer()
-^+CapsLock::ToggleMasterLayer()
+*#CapsLock::ToggleMasterLayer()
+*^+CapsLock::ToggleMasterLayer()
 #SuspendExempt False
 
 ; ------------------------------------------------------------------------------
@@ -140,6 +144,11 @@ A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/O
 
 ; Tap CapsLock alone without pressing any other key -> Toggles CapsLock
 *CapsLock up:: {
+    global ignoreNextCapsUp
+    if (ignoreNextCapsUp) {
+        ignoreNextCapsUp := false
+        return
+    }
     if (A_PriorKey = "CapsLock")
         ToggleCapsState()
 }
