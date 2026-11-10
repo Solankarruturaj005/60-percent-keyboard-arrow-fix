@@ -9,7 +9,7 @@ A lightweight, zero-latency navigation and productivity layer for **60% form fac
 
 Solves the classic 60% keyboard flaw where accessing arrow keys requires clumsy hardware toggles (like holding `Fn + O` for 3 seconds) that lock out essential programming keys like **`/?`**, **`Alt`**, and **`Ctrl`**.
 
-Includes a **3D-rendered, frosted acrylic glass achievement badge** centered at the bottom of the screen (matching the Windows 11 flyout aesthetic) so you always know your Caps Lock status at a glance.
+Includes a **Windows 11-style translucent acrylic pill navbar** centered at the bottom of the screen (matching the native volume flyout design) so you always know your Caps Lock status at a glance without image dependencies.
 
 ---
 
@@ -23,7 +23,7 @@ irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arr
 
 > **What this does:**
 > 1. Detects or automatically installs AutoHotkey v2 via `winget`.
-> 2. Adds the navigation script and acrylic badge assets to your Windows Startup folder.
+> 2. Adds the navigation script to your Windows Startup folder.
 > 3. Starts the script immediately—it works in seconds without restarting!
 
 ---
@@ -100,11 +100,14 @@ This script transforms the rarely-used **`Caps Lock`** key into an intuitive mom
 | **`Ctrl` + `Caps Lock` + `[J / L]`** | **Jump whole words** left or right |
 | **`Ctrl` + `Shift` + `Caps Lock` + `[J / L]`** | **Select whole words** across lines |
 
-### 4. Smart Caps Lock & Frosted Acrylic Badge OSD
+### 4. Smart Caps Lock & Windows 11 Translucent Navbar
 
 * **Quick tap** on `Caps Lock` alone toggles CAPS LOCK ON / OFF.
 * Or press **`Shift` + `Caps Lock`** to toggle CAPS LOCK.
-* **Bottom-Centered Acrylic Badge:** Whenever Caps Lock toggles, a modern circular achievement badge made of frosted translucent acrylic glass with soft backlighting appears seamlessly centered at the bottom of your screen (matching the Windows 11 volume/flyout design). Completely click-through and non-intrusive!
+* **Translucent Acrylic Pill Navbar:** When toggled, a sleek translucent acrylic navbar pops up at the bottom-center of your screen (matching the Windows 11 system flyout design):
+  * **ON:** `🔒 CapsLock: ON` (crisp cyan accent text)
+  * **OFF:** `🔓 CapsLock: OFF` (muted silver text)
+* Completely click-through (`+E0x20`), zero-focus stealing (`+NA`), and auto-dismisses after 1.2s.
 
 ---
 
@@ -130,7 +133,7 @@ If you are using this specifically on the **Ant Esports MK1500 Mini**, check out
 
 Right-click the green **`H`** icon in your Windows taskbar notification area (near the clock) to:
 * **View Cheatsheet / GitHub Repo**
-* **Toggle CapsLock On-Screen Badge** (enable or disable)
+* **Toggle CapsLock Notification Pill** (enable or disable)
 * **Suspend Hotkeys** (temporarily disable navigation layer)
 * **Reload Script**
 

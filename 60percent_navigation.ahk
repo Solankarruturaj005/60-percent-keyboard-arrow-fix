@@ -10,7 +10,7 @@
 ;   3. Missing media/volume controls
 ;   4. Missing forward Delete, Home, End, PageUp, PageDown
 ;   5. Esc vs. Backtick / Tilde conflict
-;   6. Modern Frosted Acrylic Glass CapsLock Achievement Badge (Bottom-Centered OSD)
+;   6. Windows 11 Native Translucent Pill Navbar OSD (Bottom-Centered)
 ;
 ; SHORTCUTS (While HOLDING CapsLock):
 ; ------------------------------------------------------------------------------
@@ -36,62 +36,56 @@
 ; NORMAL CAPSLOCK FUNCTION:
 ;   - Quick tap of CapsLock toggles CAPS LOCK ON / OFF.
 ;   - Or press Shift + CapsLock to toggle CAPS LOCK.
-;   - Displays a modern circular frosted acrylic glass badge at bottom-center of screen.
+;   - Displays a modern Windows 11 translucent pill notification at bottom-center.
 ; ==============================================================================
 
 ; --- Settings & State ---
 global showNotification := true
-global badgeGui := ""
-global badgePic := ""
-global badgeSize := 110
+global pillGui := ""
+global textCtrl := ""
+global pillWidth := 240
+global pillHeight := 46
 
-InitBadgeGui() {
-    global badgeGui, badgePic, badgeSize
-    badgeGui := Gui("-Caption +AlwaysOnTop +ToolWindow +E0x20 -DPIScale")
-    badgeGui.BackColor := "010101"
-    WinSetTransColor("010101 255", badgeGui)
+InitPillGui() {
+    global pillGui, textCtrl, pillWidth, pillHeight
+    pillGui := Gui("-Caption +AlwaysOnTop +ToolWindow +Owner +E0x20 -DPIScale")
+    pillGui.BackColor := "1c1c1c"
     
-    assetOn := GetAssetPath(true)
-    badgePic := badgeGui.Add("Picture", "x0 y0 w" . badgeSize . " h" . badgeSize . " BackgroundTrans", assetOn)
-}
-
-GetAssetPath(state) {
-    fileName := state ? "caps_on.png" : "caps_off.png"
-    candidates := [
-        A_ScriptDir . "\assets\" . fileName,
-        A_AppData . "\Microsoft\Windows\Start Menu\Programs\Startup\assets\" . fileName,
-        A_WorkingDir . "\assets\" . fileName
-    ]
-    for path in candidates {
-        if FileExist(path)
-            return path
-    }
-    return ""
+    ; Native Windows 11 Rounded Corners (DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWCP_ROUND = 2)
+    DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", pillGui.Hwnd, "UInt", 33, "Int*", 2, "UInt", 4)
+    
+    ; Native Acrylic Backdrop (DWMWA_SYSTEMBACKDROP_TYPE = 38, DWMSBT_TRANSIENTWINDOW = 3)
+    DllCall("dwmapi\DwmSetWindowAttribute", "Ptr", pillGui.Hwnd, "UInt", 38, "Int*", 3, "UInt", 4)
+    
+    ; Translucent dark glass opacity
+    WinSetTransparent(225, pillGui.Hwnd)
+    
+    pillGui.SetFont("s11 bold c67e8f9", "Segoe UI")
+    textCtrl := pillGui.Add("Text", "Center x0 y12 w" . pillWidth . " h" . (pillHeight - 12))
 }
 
 ShowCapsNotification(state) {
-    global badgeGui, badgePic, showNotification, badgeSize
+    global pillGui, textCtrl, showNotification, pillWidth, pillHeight
     if (!showNotification)
         return
         
-    imgPath := GetAssetPath(state)
-    
-    if (imgPath != "") {
-        if (!badgeGui)
-            InitBadgeGui()
-            
-        badgePic.Value := imgPath
-        xPos := (A_ScreenWidth - badgeSize) // 2
-        yPos := A_ScreenHeight - 160 ; Centered at bottom above taskbar
-        badgeGui.Show("x" . xPos . " y" . yPos . " w" . badgeSize . " h" . badgeSize . " NoActivate")
-        SetTimer(() => badgeGui.Hide(), -1300)
+    if (!pillGui)
+        InitPillGui()
+        
+    if (state) {
+        textCtrl.SetFont("c38bdf8") ; Soft cyan accent for ON
+        textCtrl.Value := "🔒  CapsLock: ON"
     } else {
-        ; Fallback to clean ToolTip if image asset is unavailable
-        text := state ? "  CAPS LOCK: ON  " : "  CAPS LOCK: OFF  "
-        CoordMode "ToolTip", "Screen"
-        ToolTip(text, (A_ScreenWidth - 160) // 2, A_ScreenHeight - 140)
-        SetTimer(() => ToolTip(), -1200)
+        textCtrl.SetFont("c94a3b8") ; Muted silver for OFF
+        textCtrl.Value := "🔓  CapsLock: OFF"
     }
+    
+    MonitorGetWorkArea(,, &workLeft, &workTop, &workRight, &workBottom)
+    posX := workLeft + (workRight - workLeft - pillWidth) // 2
+    posY := workBottom - pillHeight - 35 ; Bottom-centered above taskbar
+    
+    pillGui.Show("x" . posX . " y" . posY . " w" . pillWidth . " h" . pillHeight . " NoActivate")
+    SetTimer(() => pillGui.Hide(), -1300)
 }
 
 ToggleCapsState() {
@@ -112,7 +106,7 @@ SetupTrayMenu() {
     tray.Disable("60% Keyboard Navigation Layer (Active)")
     tray.Add()
     tray.Add("View Cheatsheet / GitHub", (*) => OpenGitHub())
-    tray.Add("Toggle CapsLock On-Screen Badge", (*) => ToggleNotificationOption())
+    tray.Add("Toggle CapsLock Notification Pill", (*) => ToggleNotificationOption())
     tray.Add()
     tray.Add("Suspend Hotkeys", (*) => Suspend(-1))
     tray.Add("Reload Script", (*) => Reload())
@@ -126,7 +120,7 @@ OpenGitHub() {
 ToggleNotificationOption() {
     global showNotification := !showNotification
     statusText := showNotification ? "Enabled" : "Disabled"
-    ToolTip("Caps Lock Badge: " . statusText)
+    ToolTip("Caps Lock Pill: " . statusText)
     SetTimer(() => ToolTip(), -1000)
 }
 
