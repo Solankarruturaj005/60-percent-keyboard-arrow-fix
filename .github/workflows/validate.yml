@@ -70,12 +70,7 @@ jobs:
           # AutoHotkey will output the error to stderr and exit with a non-zero code.
           $targetScript = (Resolve-Path "60percent_navigation.ahk").Path
           $harnessPath = Join-Path $env:TEMP "ci_validate_harness.ahk"
-          $harnessContent = @"
-#Requires AutoHotkey v2.0
-#Include $targetScript
-ExitApp 0
-"@
-          [System.IO.File]::WriteAllText($harnessPath, $harnessContent)
+          Set-Content -Path $harnessPath -Value "#Requires AutoHotkey v2.0`r`n#Include $targetScript`r`nExitApp 0"
 
           $stdoutFile = Join-Path $env:TEMP "ahk_stdout.txt"
           $stderrFile = Join-Path $env:TEMP "ahk_stderr.txt"
