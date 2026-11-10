@@ -1,0 +1,13 @@
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# AutoHotkey temporary / logs
+*.log
+*.bak
+
+# Editor directories
+.vscode/
+.idea/
