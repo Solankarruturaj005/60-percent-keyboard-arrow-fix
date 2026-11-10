@@ -43,6 +43,7 @@ Persistent(true)
 
 ; --- State & Sizing ---
 global isLayerActive := false
+global isCapsLocked := false
 global lastToggleTick := 0
 global pillGui := ""
 global textCtrl := ""
@@ -83,13 +84,14 @@ ShowPillOSD(text, colorHex := "38bdf8", durationMs := 1300) {
 }
 
 ToggleMasterLayer() {
-    global isLayerActive, lastToggleTick
+    global isLayerActive, lastToggleTick, isCapsLocked
     lastToggleTick := A_TickCount
     
     ; Mask Windows key to prevent Windows Start Menu from popping up
     SendInput("{Blind}{vkE8}")
     
     isLayerActive := !isLayerActive
+    isCapsLocked := false ; Reset CapsLock toggle state on layer switch
     if (isLayerActive) {
         ; Explicitly ensure CapsLock state is OFF when activating
         SetCapsLockState "AlwaysOff"
@@ -106,12 +108,14 @@ ToggleMasterLayer() {
 }
 
 ToggleCapsState() {
-    if GetKeyState("CapsLock", "T") {
-        SetCapsLockState "AlwaysOff"
-        ShowPillOSD("🔓  CapsLock: OFF", "94a3b8")
-    } else {
+    global isCapsLocked
+    isCapsLocked := !isCapsLocked
+    if (isCapsLocked) {
         SetCapsLockState "AlwaysOn"
         ShowPillOSD("🔒  CapsLock: ON", "38bdf8")
+    } else {
+        SetCapsLockState "AlwaysOff"
+        ShowPillOSD("🔓  CapsLock: OFF", "94a3b8")
     }
 }
 
@@ -227,12 +231,14 @@ OnDeviceChange(wParam, lParam, msg, hwnd) {
 }
 
 RecoverHardwareState() {
-    global isLayerActive
+    global isLayerActive, isCapsLocked
     ; Force re-installation of low-level keyboard hook
     InstallKeybdHook(true, true)
     
     ; Re-sync CapsLock state
-    if (isLayerActive) {
+    if (isCapsLocked) {
+        SetCapsLockState "AlwaysOn"
+    } else if (isLayerActive) {
         SetCapsLockState "AlwaysOff"
     } else {
         SetCapsLockState "Off"
