@@ -9,6 +9,8 @@ A lightweight, zero-latency navigation and productivity layer for **60% form fac
 
 Solves the classic 60% keyboard flaw where accessing arrow keys requires clumsy hardware toggles (like holding `Fn + O` for 3 seconds) that lock out essential programming keys like **`/?`**, **`Alt`**, and **`Ctrl`**.
 
+Includes a **3D-rendered, frosted acrylic glass achievement badge** centered at the bottom of the screen (matching the Windows 11 flyout aesthetic) so you always know your Caps Lock status at a glance.
+
 ---
 
 ## ⚡ Instant 1-Command Install (PowerShell)
@@ -21,7 +23,7 @@ irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arr
 
 > **What this does:**
 > 1. Detects or automatically installs AutoHotkey v2 via `winget`.
-> 2. Adds the navigation script to your Windows Startup folder.
+> 2. Adds the navigation script and acrylic badge assets to your Windows Startup folder.
 > 3. Starts the script immediately—it works in seconds without restarting!
 
 ---
@@ -98,11 +100,11 @@ This script transforms the rarely-used **`Caps Lock`** key into an intuitive mom
 | **`Ctrl` + `Caps Lock` + `[J / L]`** | **Jump whole words** left or right |
 | **`Ctrl` + `Shift` + `Caps Lock` + `[J / L]`** | **Select whole words** across lines |
 
-### 4. Smart Caps Lock & On-Screen Indicator
+### 4. Smart Caps Lock & Frosted Acrylic Badge OSD
 
 * **Quick tap** on `Caps Lock` alone toggles CAPS LOCK ON / OFF.
 * Or press **`Shift` + `Caps Lock`** to toggle CAPS LOCK.
-* **On-Screen Badge:** Whenever Caps Lock toggles, a sleek badge (`CAPS LOCK: ON` / `CAPS LOCK: OFF`) appears near the bottom-right corner for 1.2 seconds, solving the missing physical LED problem!
+* **Bottom-Centered Acrylic Badge:** Whenever Caps Lock toggles, a modern circular achievement badge made of frosted translucent acrylic glass with soft backlighting appears seamlessly centered at the bottom of your screen (matching the Windows 11 volume/flyout design). Completely click-through and non-intrusive!
 
 ---
 

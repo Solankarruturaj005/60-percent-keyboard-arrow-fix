@@ -3,7 +3,7 @@
     1-Click Installer for 60% Keyboard Navigation & Arrow Fix
 .DESCRIPTION
     Installs AutoHotkey v2 (if missing via winget), registers the navigation script
-    into the Windows Startup folder, and starts the layer immediately.
+    and acrylic badge assets into the Windows Startup folder, and starts the layer immediately.
     Supports both local execution and remote one-liner execution:
     irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/install.ps1 | iex
 #>
@@ -33,7 +33,7 @@ function Get-AHKExecutable {
         }
     }
 
-    $cmd = Get-Command AutoHotkey64.exe, AutoHotkey.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    $cmd = Get-Command AutoHotkey64.exe, AutoHotkey.exe, AutoHotkey32.exe -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($cmd) {
         return $cmd.Source
     }
@@ -61,9 +61,11 @@ if (-not $ahkExe) {
 
 Write-Host "[+] Found AutoHotkey v2 at: $ahkExe" -ForegroundColor Green
 
-# 2. Determine Script Source (Local or Remote)
+# 2. Determine Script & Assets Source (Local or Remote)
 $startupFolder = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Startup)
 $destination = Join-Path $startupFolder "60percent_navigation.ahk"
+$assetsDest = Join-Path $startupFolder "assets"
+New-Item -ItemType Directory -Path $assetsDest -Force | Out-Null
 
 $localSource = $null
 if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "60percent_navigation.ahk"))) {
@@ -75,13 +77,21 @@ if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "60percent_navigation
 if ($localSource) {
     Write-Host "[*] Installing from local repository..." -ForegroundColor Cyan
     Copy-Item -Path $localSource -Destination $destination -Force
+    $localAssets = Join-Path (Split-Path $localSource) "assets"
+    if (Test-Path $localAssets) {
+        Copy-Item -Path "$localAssets\*" -Destination $assetsDest -Force
+    }
 } else {
     Write-Host "[*] Fetching latest 60percent_navigation.ahk from GitHub..." -ForegroundColor Cyan
-    $remoteUrl = "https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/60percent_navigation.ahk"
-    Invoke-RestMethod -Uri $remoteUrl -OutFile $destination
+    $rawBase = "https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main"
+    Invoke-RestMethod -Uri "$rawBase/60percent_navigation.ahk" -OutFile $destination
+    Write-Host "[*] Downloading modern acrylic badge assets..." -ForegroundColor Cyan
+    Invoke-RestMethod -Uri "$rawBase/assets/caps_on.png" -OutFile (Join-Path $assetsDest "caps_on.png")
+    Invoke-RestMethod -Uri "$rawBase/assets/caps_off.png" -OutFile (Join-Path $assetsDest "caps_off.png")
 }
 
 Write-Host "[+] Installed to: $destination" -ForegroundColor Green
+Write-Host "[+] Badge assets installed to: $assetsDest" -ForegroundColor Green
 
 # 3. Stop older running instances
 Write-Host "[*] Refreshing running navigation instances..." -ForegroundColor Cyan
@@ -114,7 +124,7 @@ Write-Host "  CapsLock + Esc            ->  Backtick (`) / Tilde (~)"
 Write-Host "  CapsLock + U / O          ->  Home / End"
 Write-Host "  CapsLock + H / N          ->  PageUp / PageDown"
 Write-Host "  CapsLock + Backspace      ->  Delete"
-Write-Host "  Tap CapsLock alone        ->  Toggle CapsLock (shows on-screen badge)"
+Write-Host "  Tap CapsLock alone        ->  Toggle CapsLock (shows bottom-centered acrylic badge)"
 Write-Host ""
 Write-Host "You never need to hold Fn+O again! Enjoy coding." -ForegroundColor Cyan
 Write-Host ""

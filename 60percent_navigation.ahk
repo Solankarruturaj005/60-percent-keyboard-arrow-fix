@@ -10,7 +10,7 @@
 ;   3. Missing media/volume controls
 ;   4. Missing forward Delete, Home, End, PageUp, PageDown
 ;   5. Esc vs. Backtick / Tilde conflict
-;   6. Lack of CapsLock status LED on budget 60% keyboards
+;   6. Modern Frosted Acrylic Glass CapsLock Achievement Badge (Bottom-Centered OSD)
 ;
 ; SHORTCUTS (While HOLDING CapsLock):
 ; ------------------------------------------------------------------------------
@@ -36,20 +36,62 @@
 ; NORMAL CAPSLOCK FUNCTION:
 ;   - Quick tap of CapsLock toggles CAPS LOCK ON / OFF.
 ;   - Or press Shift + CapsLock to toggle CAPS LOCK.
-;   - Displays a clean floating on-screen badge showing CAPS LOCK state.
+;   - Displays a modern circular frosted acrylic glass badge at bottom-center of screen.
 ; ==============================================================================
 
 ; --- Settings & State ---
 global showNotification := true
+global badgeGui := ""
+global badgePic := ""
+global badgeSize := 110
+
+InitBadgeGui() {
+    global badgeGui, badgePic, badgeSize
+    badgeGui := Gui("-Caption +AlwaysOnTop +ToolWindow +E0x20 -DPIScale")
+    badgeGui.BackColor := "010101"
+    WinSetTransColor("010101 255", badgeGui)
+    
+    assetOn := GetAssetPath(true)
+    badgePic := badgeGui.Add("Picture", "x0 y0 w" . badgeSize . " h" . badgeSize . " BackgroundTrans", assetOn)
+}
+
+GetAssetPath(state) {
+    fileName := state ? "caps_on.png" : "caps_off.png"
+    candidates := [
+        A_ScriptDir . "\assets\" . fileName,
+        A_AppData . "\Microsoft\Windows\Start Menu\Programs\Startup\assets\" . fileName,
+        A_WorkingDir . "\assets\" . fileName
+    ]
+    for path in candidates {
+        if FileExist(path)
+            return path
+    }
+    return ""
+}
 
 ShowCapsNotification(state) {
+    global badgeGui, badgePic, showNotification, badgeSize
     if (!showNotification)
         return
-    text := state ? "  CAPS LOCK: ON  " : "  CAPS LOCK: OFF  "
-    CoordMode "ToolTip", "Screen"
-    ; Position near bottom-right corner of main display
-    ToolTip(text, A_ScreenWidth - 200, A_ScreenHeight - 110)
-    SetTimer(() => ToolTip(), -1200)
+        
+    imgPath := GetAssetPath(state)
+    
+    if (imgPath != "") {
+        if (!badgeGui)
+            InitBadgeGui()
+            
+        badgePic.Value := imgPath
+        xPos := (A_ScreenWidth - badgeSize) // 2
+        yPos := A_ScreenHeight - 160 ; Centered at bottom above taskbar
+        badgeGui.Show("x" . xPos . " y" . yPos . " w" . badgeSize . " h" . badgeSize . " NoActivate")
+        SetTimer(() => badgeGui.Hide(), -1300)
+    } else {
+        ; Fallback to clean ToolTip if image asset is unavailable
+        text := state ? "  CAPS LOCK: ON  " : "  CAPS LOCK: OFF  "
+        CoordMode "ToolTip", "Screen"
+        ToolTip(text, (A_ScreenWidth - 160) // 2, A_ScreenHeight - 140)
+        SetTimer(() => ToolTip(), -1200)
+    }
 }
 
 ToggleCapsState() {
