@@ -80,9 +80,8 @@ ShowCapsNotification(state) {
         textCtrl.Value := "🔓  CapsLock: OFF"
     }
     
-    MonitorGetWorkArea(1, &workLeft, &workTop, &workRight, &workBottom)
-    posX := workLeft + (workRight - workLeft - pillWidth) // 2
-    posY := workBottom - pillHeight - 35 ; Bottom-centered above taskbar
+    posX := (A_ScreenWidth - pillWidth) // 2
+    posY := A_ScreenHeight - pillHeight - 90 ; Bottom-centered above taskbar
     
     pillGui.Show("x" . posX . " y" . posY . " w" . pillWidth . " h" . pillHeight . " NoActivate")
     SetTimer(() => pillGui.Hide(), -1300)
