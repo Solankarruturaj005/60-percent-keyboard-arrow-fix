@@ -4,7 +4,7 @@
 .DESCRIPTION
     Installs AutoHotkey v2 (if missing via winget), registers the navigation script
     into the Windows Startup folder, and starts the layer in dormant mode.
-    Toggle the layer anytime with: Win + CapsLock or Ctrl + Shift + CapsLock.
+    Toggle the layer anytime with: Win + CapsLock or Ctrl + Alt + CapsLock.
     Supports both local execution and remote one-liner execution:
     irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/install.ps1 | iex
 #>
@@ -21,11 +21,33 @@ Write-Host ""
 
 # 1. Locate or Install AutoHotkey v2
 function Get-AHKExecutable {
-    $candidates = @(
-        "$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey64.exe",
+    # If 64-bit OS, ensure official 64-bit binary is restored if only UX launcher is present
+    $is64 = [Environment]::Is64BitOperatingSystem
+    if ($is64) {
+        $uxCandidate = "$env:LOCALAPPDATA\Programs\AutoHotkey\UX\AutoHotkeyUX.exe"
+        $v2_64 = "$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey64.exe"
+        if ((Test-Path $uxCandidate) -and (-not (Test-Path $v2_64))) {
+            try {
+                $v2Dir = Split-Path $v2_64 -Parent
+                if (-not (Test-Path $v2Dir)) { New-Item -ItemType Directory -Path $v2Dir -Force | Out-Null }
+                Copy-Item -Path $uxCandidate -Destination $v2_64 -Force
+            } catch {}
+        }
+    }
+
+    $candidates = @()
+    if ($is64) {
+        $candidates += @(
+            "$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey64.exe",
+            "C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe",
+            "C:\Program Files\AutoHotkey\AutoHotkey64.exe",
+            "$env:LOCALAPPDATA\Programs\AutoHotkey\UX\AutoHotkeyUX.exe"
+        )
+    }
+    $candidates += @(
         "$env:LOCALAPPDATA\Programs\AutoHotkey\v2\AutoHotkey32.exe",
-        "C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe",
-        "C:\Program Files\AutoHotkey\v2\AutoHotkey32.exe"
+        "C:\Program Files\AutoHotkey\v2\AutoHotkey32.exe",
+        "C:\Program Files\AutoHotkey\AutoHotkey.exe"
     )
 
     foreach ($path in $candidates) {
@@ -107,7 +129,7 @@ Write-Host "  Installation Successful! The layer is ready in standby. " -Foregro
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Master Keyboard Switch:" -ForegroundColor Yellow
-Write-Host "  Press Win + CapsLock (or Ctrl + Shift + CapsLock) to TOGGLE the layer ON / OFF." -ForegroundColor Yellow
+Write-Host "  Press Win + CapsLock (or Ctrl + Alt + CapsLock) to TOGGLE the layer ON / OFF." -ForegroundColor Yellow
 Write-Host "  When OFF: 100% normal stock keyboard behavior."
 Write-Host "  When ON: Full 60% navigation layer is active!"
 Write-Host ""

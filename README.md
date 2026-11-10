@@ -35,10 +35,11 @@ You have full control over when the navigation layer is active:
 | Shortcut | Action | Visual OSD Feedback |
 | :--- | :--- | :--- |
 | **`Win` + `CapsLock`** | **Toggle Layer ON / OFF** | `⚡ 60% Layer: ENABLED` / `💤 60% Layer: DISABLED` |
-| **`Ctrl` + `Shift` + `CapsLock`** | **Alternate Toggle** | `⚡ 60% Layer: ENABLED` / `💤 60% Layer: DISABLED` |
+| **`Ctrl` + `Alt` + `CapsLock`** | **Alternate Toggle** | `⚡ 60% Layer: ENABLED` / `💤 60% Layer: DISABLED` |
 
 * **When DISABLED (Standby):** The script is completely dormant. Your keyboard behaves 100% like a normal, stock keyboard with zero key interception.
 * **When ENABLED:** Full navigation, arrows, F-keys, and media controls are instantly active.
+* **Auto-Recovery Watchdog:** Automatically detects USB/Bluetooth keyboard disconnects, reconnects, or sleep wake (`WM_DEVICECHANGE`) and re-binds the keyboard hook so your shortcuts never drop after being idle!
 
 ---
 

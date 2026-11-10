@@ -1,11 +1,16 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+; Force keyboard hook and keep running
+InstallKeybdHook(true, true)
+A_MenuMaskKey := "vkE8" ; Mask Win key to prevent Windows Start Menu interruptions
+Persistent(true)
+
 ; ==============================================================================
 ; 60% Keyboard Navigation & Productivity Layer (Universal & MK1500 Mini Fix)
 ; ==============================================================================
 ; MASTER KEYBOARD TOGGLE:
-;   Press Win + CapsLock (or Ctrl + Shift + CapsLock) to toggle the layer ON / OFF.
+;   Press Win + CapsLock (or Ctrl + Alt + CapsLock) to toggle the layer ON / OFF.
 ;   - When DISABLED (default on boot): Script is dormant. 100% normal stock keyboard.
 ;   - When ENABLED: CapsLock navigation, smart tap, F-keys, and media layer are active.
 ;
@@ -38,7 +43,7 @@
 
 ; --- State & Sizing ---
 global isLayerActive := false
-global ignoreNextCapsUp := false
+global lastToggleTick := 0
 global pillGui := ""
 global textCtrl := ""
 global pillWidth := 250
@@ -78,19 +83,26 @@ ShowPillOSD(text, colorHex := "38bdf8", durationMs := 1300) {
 }
 
 ToggleMasterLayer() {
-    global isLayerActive := !isLayerActive, ignoreNextCapsUp := true
+    global isLayerActive, lastToggleTick
+    lastToggleTick := A_TickCount
+    
+    ; Mask Windows key to prevent Windows Start Menu from popping up
+    SendInput("{Blind}{vkE8}")
+    
+    isLayerActive := !isLayerActive
     if (isLayerActive) {
-        ; Explicitly ensure CapsLock is OFF when activating
+        ; Explicitly ensure CapsLock state is OFF when activating
         SetCapsLockState "AlwaysOff"
-        Suspend(false)
         ShowPillOSD("⚡ 60% Layer: ENABLED", "38bdf8")
     } else {
-        ; Restore normal keyboard mode, ensuring CapsLock is in clean OFF state
+        ; Restore normal keyboard mode, clean CapsLock state
         SetCapsLockState "Off"
-        Suspend(true)
         ShowPillOSD("💤 60% Layer: DISABLED", "94a3b8")
     }
-    KeyWait("CapsLock", "T1") ; Wait for physical release so it never triggers a tap
+    
+    ; Force re-bind hook cleanly on every toggle
+    InstallKeybdHook(true, true)
+    SendInput("{Blind}{vkE8}")
 }
 
 ToggleCapsState() {
@@ -111,6 +123,7 @@ SetupTrayMenu() {
     tray.Disable("60% Keyboard Navigation Layer")
     tray.Add()
     tray.Add("Toggle Layer (Win + CapsLock)", (*) => ToggleMasterLayer())
+    tray.Add("Re-sync Keyboard Hook", (*) => RecoverHardwareState())
     tray.Add("View Cheatsheet / GitHub", (*) => OpenGitHub())
     tray.Add()
     tray.Add("Reload Script", (*) => Reload())
@@ -125,16 +138,18 @@ SetupTrayMenu()
 A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/OFF"
 
 ; ------------------------------------------------------------------------------
-; Master Keyboard Toggle Shortcuts (Always Active even when suspended)
+; Master Keyboard Toggle Shortcuts (Always Active)
 ; ------------------------------------------------------------------------------
-#SuspendExempt True
+; Win + CapsLock (Master on-demand switch)
 *#CapsLock::ToggleMasterLayer()
-*^+CapsLock::ToggleMasterLayer()
-#SuspendExempt False
+
+; Ctrl + Alt + CapsLock (Alternate toggle that does NOT collide with word selection)
+*!^CapsLock::ToggleMasterLayer()
 
 ; ------------------------------------------------------------------------------
 ; Navigation Layer Hotkeys (Only active when layer is ENABLED)
 ; ------------------------------------------------------------------------------
+#HotIf isLayerActive
 
 ; Shift + CapsLock toggles original CapsLock state
 +CapsLock::ToggleCapsState()
@@ -144,16 +159,15 @@ A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/O
 
 ; Tap CapsLock alone without pressing any other key -> Toggles CapsLock
 *CapsLock up:: {
-    global ignoreNextCapsUp
-    if (ignoreNextCapsUp) {
-        ignoreNextCapsUp := false
+    global lastToggleTick
+    ; Debounce if master layer was just toggled
+    if (A_TickCount - lastToggleTick < 400)
         return
-    }
     if (A_PriorKey = "CapsLock")
         ToggleCapsState()
 }
 
-#HotIf GetKeyState("CapsLock", "P")
+#HotIf isLayerActive and GetKeyState("CapsLock", "P")
 
 ; --- Right-hand Arrow Keys (Home Row) ---
 *i::SendInput("{Blind}{Up}")
@@ -198,5 +212,40 @@ A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/O
 
 #HotIf
 
-; Start dormant by default (normal keyboard working as it is until enabled)
-Suspend(true)
+; ------------------------------------------------------------------------------
+; Hardware Disconnect / Reconnect / Bluetooth Sleep Auto-Recovery
+; ------------------------------------------------------------------------------
+; WM_DEVICECHANGE (0x0219) notification listener
+; Re-registers low-level keyboard hook whenever USB or Bluetooth keyboard reconnects
+OnMessage(0x0219, OnDeviceChange)
+
+OnDeviceChange(wParam, lParam, msg, hwnd) {
+    ; DBT_DEVNODES_CHANGED = 0x0007, DBT_DEVICEARRIVAL = 0x8000, DBT_DEVICEREMOVECOMPLETE = 0x8004
+    ; Debounce by 400ms to let Windows driver & PnP stack settle before re-hooking
+    SetTimer(RecoverHardwareState, -400)
+    return true
+}
+
+RecoverHardwareState() {
+    global isLayerActive
+    ; Force re-installation of low-level keyboard hook
+    InstallKeybdHook(true, true)
+    
+    ; Re-sync CapsLock state
+    if (isLayerActive) {
+        SetCapsLockState "AlwaysOff"
+    } else {
+        SetCapsLockState "Off"
+    }
+}
+
+; ------------------------------------------------------------------------------
+; Periodic Keep-Alive Heartbeat Watchdog
+; ------------------------------------------------------------------------------
+; Checks every 15 seconds to ensure Windows does not silently drop WH_KEYBOARD_LL
+; after prolonged idle time (LowLevelHooksTimeout)
+SetTimer(WatchdogKeepAlive, 15000)
+
+WatchdogKeepAlive() {
+    InstallKeybdHook(true, false)
+}
