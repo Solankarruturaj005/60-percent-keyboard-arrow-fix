@@ -4,6 +4,8 @@
 .DESCRIPTION
     Installs AutoHotkey v2 (if missing via winget), registers the navigation script
     into the Windows Startup folder, and starts the layer immediately.
+    Supports both local execution and remote one-liner execution:
+    irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/install.ps1 | iex
 #>
 
 [CmdletBinding()]
@@ -12,7 +14,7 @@ param()
 $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "  60% Keyboard Navigation & Arrow Keys Fix Installer      " -ForegroundColor Yellow
+Write-Host "  60% Keyboard Navigation & Productivity Fix Installer    " -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -59,39 +61,41 @@ if (-not $ahkExe) {
 
 Write-Host "[+] Found AutoHotkey v2 at: $ahkExe" -ForegroundColor Green
 
-# 2. Determine Script Paths
-$scriptSource = Join-Path $PSScriptRoot "60percent_navigation.ahk"
-if (-not (Test-Path $scriptSource)) {
-    # Fallback to current folder if executed in directory
-    $scriptSource = Join-Path (Get-Location) "60percent_navigation.ahk"
-}
-
-if (-not (Test-Path $scriptSource)) {
-    Write-Error "Could not find '60percent_navigation.ahk' in current directory."
-    return
-}
-
+# 2. Determine Script Source (Local or Remote)
 $startupFolder = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Startup)
 $destination = Join-Path $startupFolder "60percent_navigation.ahk"
 
-# 3. Stop any existing running instances
-Write-Host "[*] Checking for previous running instances..." -ForegroundColor Cyan
+$localSource = $null
+if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "60percent_navigation.ahk"))) {
+    $localSource = Join-Path $PSScriptRoot "60percent_navigation.ahk"
+} elseif (Test-Path ".\60percent_navigation.ahk") {
+    $localSource = (Resolve-Path ".\60percent_navigation.ahk").Path
+}
+
+if ($localSource) {
+    Write-Host "[*] Installing from local repository..." -ForegroundColor Cyan
+    Copy-Item -Path $localSource -Destination $destination -Force
+} else {
+    Write-Host "[*] Fetching latest 60percent_navigation.ahk from GitHub..." -ForegroundColor Cyan
+    $remoteUrl = "https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/60percent_navigation.ahk"
+    Invoke-RestMethod -Uri $remoteUrl -OutFile $destination
+}
+
+Write-Host "[+] Installed to: $destination" -ForegroundColor Green
+
+# 3. Stop older running instances
+Write-Host "[*] Refreshing running navigation instances..." -ForegroundColor Cyan
 Get-Process -Name "AutoHotkey*" -ErrorAction SilentlyContinue | ForEach-Object {
     try {
         $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)").CommandLine
         if ($cmdLine -match "60percent_navigation" -or $cmdLine -match "MK1500_Navigation") {
             Stop-Process -Id $_.Id -Force
-            Write-Host "    Stopped older navigation instance (PID: $($_.Id))" -ForegroundColor Gray
+            Write-Host "    Stopped prior instance (PID: $($_.Id))" -ForegroundColor Gray
         }
     } catch {}
 }
 
-# 4. Copy to Startup
-Write-Host "[*] Copying script to Windows Startup folder..." -ForegroundColor Cyan
-Copy-Item -Path $scriptSource -Destination $destination -Force
-Write-Host "[+] Installed to: $destination" -ForegroundColor Green
-
-# 5. Launch the Script
+# 4. Launch the Script
 Write-Host "[*] Starting the navigation layer..." -ForegroundColor Cyan
 Start-Process -FilePath $ahkExe -ArgumentList "`"$destination`""
 Start-Sleep -Milliseconds 500
@@ -102,12 +106,15 @@ Write-Host "  Installation Successful! The layer is now active!       " -Foregro
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Quick Cheatsheet (Hold CapsLock):" -ForegroundColor Yellow
-Write-Host "  CapsLock + I / J / K / L  ->  Up / Left / Down / Right"
-Write-Host "  CapsLock + W / A / S / D  ->  Up / Left / Down / Right"
+Write-Host "  CapsLock + I / J / K / L  ->  Up / Left / Down / Right (Home Row)"
+Write-Host "  CapsLock + W / A / S / D  ->  Up / Left / Down / Right (WASD)"
+Write-Host "  CapsLock + 1 .. =         ->  F1 .. F12 (Function Row)"
+Write-Host "  CapsLock + [ / ] / \      ->  Vol- / Vol+ / Mute"
+Write-Host "  CapsLock + Esc            ->  Backtick (`) / Tilde (~)"
 Write-Host "  CapsLock + U / O          ->  Home / End"
 Write-Host "  CapsLock + H / N          ->  PageUp / PageDown"
 Write-Host "  CapsLock + Backspace      ->  Delete"
-Write-Host "  Tap CapsLock alone        ->  Toggle normal CapsLock"
+Write-Host "  Tap CapsLock alone        ->  Toggle CapsLock (shows on-screen badge)"
 Write-Host ""
 Write-Host "You never need to hold Fn+O again! Enjoy coding." -ForegroundColor Cyan
 Write-Host ""

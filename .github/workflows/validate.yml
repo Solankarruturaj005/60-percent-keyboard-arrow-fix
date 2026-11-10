@@ -1,0 +1,34 @@
+name: Validate AHK Script
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install AutoHotkey v2
+        shell: powershell
+        run: |
+          choco install autohotkey.install -y
+
+      - name: Validate AutoHotkey v2 Syntax
+        shell: powershell
+        run: |
+          $ahk = "C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe"
+          if (-not (Test-Path $ahk)) {
+            $ahk = (Get-Command AutoHotkey64.exe, AutoHotkey.exe).Source
+          }
+          Write-Host "Validating with: $ahk"
+          & $ahk /validate "60percent_navigation.ahk"
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Syntax validation failed!"
+            exit 1
+          }
+          Write-Host "AutoHotkey script syntax is 100% valid!"

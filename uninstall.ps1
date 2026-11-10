@@ -3,6 +3,8 @@
     Uninstaller for 60% Keyboard Navigation & Arrow Fix
 .DESCRIPTION
     Stops the active AutoHotkey navigation process and removes the script from Startup.
+    Can also be executed remotely via:
+    irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/uninstall.ps1 | iex
 #>
 
 [CmdletBinding()]

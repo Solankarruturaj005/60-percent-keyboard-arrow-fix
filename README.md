@@ -1,26 +1,42 @@
-# ⌨️ 60% Keyboard Arrow Keys & Navigation Fix
+# ⌨️ 60% Keyboard Arrow Keys & Productivity Fix
 
 [![AutoHotkey v2](https://img.shields.io/badge/AutoHotkey-v2.0+-334455?logo=autohotkey&logoColor=white)](https://www.autohotkey.com/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-blue?logo=windows&logoColor=white)](#)
 [![Keyboard Layout](https://img.shields.io/badge/Layout-60%25%20Form%20Factor-brightgreen)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A lightweight, zero-latency navigation solution for **60% form factor keyboards** (such as **Ant Esports MK1500 Mini**, **Royal Kludge RK61**, **MageGee MK-Box**, **Redragon K530/K617**, and other compact keyboards).
+A lightweight, zero-latency navigation and productivity layer for **60% form factor keyboards** (including **Ant Esports MK1500 Mini**, **Royal Kludge RK61**, **MageGee MK-Box**, **Redragon K530/K617**, and other compact keyboards).
 
-Solves the classic 60% dilemma where accessing arrow keys requires clumsy toggles that lock out essential programming keys like **`/?`**, **`Alt`**, and **`Ctrl`**.
+Solves the classic 60% keyboard flaw where accessing arrow keys requires clumsy hardware toggles (like holding `Fn + O` for 3 seconds) that lock out essential programming keys like **`/?`**, **`Alt`**, and **`Ctrl`**.
+
+---
+
+## ⚡ Instant 1-Command Install (PowerShell)
+
+Open Windows PowerShell (Run as regular user) and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/install.ps1 | iex
+```
+
+> **What this does:**
+> 1. Detects or automatically installs AutoHotkey v2 via `winget`.
+> 2. Adds the navigation script to your Windows Startup folder.
+> 3. Starts the script immediately—it works in seconds without restarting!
 
 ---
 
 ## 🎯 The Problem with 60% Keyboards for Programmers
 
-Most budget and standard 60% keyboards lack dedicated arrow keys. Manufacturers attempt to solve this with a hardware toggle mode (e.g., holding **`Fn + O` for 3 seconds** on the Ant Esports MK1500 Mini or **`Fn + Enter`** on RK61):
+Most 60% keyboards lack dedicated arrow keys. Manufacturers attempt to solve this with a hardware toggle mode (e.g., holding **`Fn + O` for 3 seconds** on the Ant Esports MK1500 Mini or **`Fn + Enter`** on RK61):
 
 | Action | Factory 60% Toggle Method | Why it's a Headache for Developers |
 | :--- | :--- | :--- |
 | **Arrow Navigation** | Hold `Fn + O` for 3 seconds to toggle arrow mode | **3-second delay** breaks typing flow |
 | **Code Comments (`//`) & Regex** | Requires exiting arrow mode first | **`/?` is disabled** because it becomes `Up Arrow` |
 | **Shortcuts (`Ctrl + Z`, `Alt + Tab`)** | Requires exiting arrow mode first | **`Ctrl` and `Alt` are disabled** because they become `Left / Right` |
-| **Hand Travel** | Right hand moves to bottom-right corner | Slower typing; leaves home row |
+| **Missing F1–F12 & Media** | Requires awkward two-handed `Fn` combos | Interrupts coding and debugging sessions |
+| **Caps Lock Confusion** | Budget 60% boards often lack a Caps Lock LED | You never know whether Caps Lock is ON or OFF |
 
 ---
 
@@ -31,17 +47,20 @@ Keep your keyboard in **NORMAL MODE permanently** (never toggle `Fn + O` again).
 This script transforms the rarely-used **`Caps Lock`** key into an intuitive momentary modifier:
 
 ```
-[Caps Lock] (HOLD) + [ I ]  -->  Up Arrow
-[Caps Lock] (HOLD) + [ J ]  -->  Left Arrow
-[Caps Lock] (HOLD) + [ K ]  -->  Down Arrow
-[Caps Lock] (HOLD) + [ L ]  -->  Right Arrow
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+
+| Esc |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  0  |  -  |  =  |Backsp |
+|  `  | F1  | F2  | F3  | F4  | F5  | F6  | F7  | F8  | F9  | F10 | F11 | F12 |  DEL  |
++-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+
+| Tab   |  Q  |  W  |  E  |  R  |  T  |  Y  |  U  |  I  |  O  |  P  |  [  |  ]  |  \    |
+|       |     |  ▲  |     |     |     |     |Home |  ▲  | End |     |Vol- |Vol+ | Mute  |
++-------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+
+| CAPS  |  A  |  S  |  D  |  F  |  G  |  H  |  J  |  K  |  L  |  ;  |  '  |   Enter   |
+|[HOLD] |  ◀  |  ▼  |  ▶  |     |     |PgUp |  ◀  |  ▼  |  ▶  |     |     |           |
++-------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+---+---------+
+| Shift   |  Z  |  X  |  C  |  V  |  B  |  N  |  M  |  ,  |  .  |  /  |     Shift     |
+|         |     |     |     |     |     |PgDn |     |     |     |     |               |
++---------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----------+
 ```
-
-* **Zero Delay:** Instant response—no waiting for mode switches.
-* **Home Row Stays Put:** Your fingers never leave the typing position.
-* **Full IDE Selection:** `Shift + CapsLock + Arrows` highlights text; `Ctrl + CapsLock + Arrows` jumps words.
-* **Normal CapsLock Preserved:** A single quick tap of `CapsLock` (or `Shift + CapsLock`) toggles standard CAPS LOCK on/off!
-* **Ultra Lightweight:** Uses ~3 MB of RAM and 0% CPU via AutoHotkey v2.
 
 ---
 
@@ -60,9 +79,18 @@ This script transforms the rarely-used **`Caps Lock`** key into an intuitive mom
 | **`Caps Lock` + `O`** | **End** | Jump to end of line |
 | **`Caps Lock` + `H`** | **Page Up** | Scroll up |
 | **`Caps Lock` + `N`** | **Page Down** | Scroll down |
-| **`Caps Lock` + `Backspace`** | **Delete** | Forward delete (often omitted on 60% layouts) |
+| **`Caps Lock` + `Backspace`** | **Delete** | Forward delete key |
 
-### 2. Developer Selection & Word Jumps
+### 2. Function Row, Media & Backtick Fix (While HOLDING `Caps Lock`)
+
+| Key Combination | Action | Use Case |
+| :--- | :--- | :--- |
+| **`Caps Lock` + `1` .. `=`** | **`F1` .. `F12`** | Instant function keys (F5 run/debug, F12 dev tools) |
+| **`Caps Lock` + `[` / `]`** | **Volume Down / Up** | Media volume adjustment |
+| **`Caps Lock` + `\`** | **Mute Volume** | Instant audio mute |
+| **`Caps Lock` + `Esc`** | **`` ` `` (Backtick) / `~` (Tilde)** | Solves the missing backtick on 60% keyboards |
+
+### 3. Developer Selection & Word Jumps
 
 | Combination | Action |
 | :--- | :--- |
@@ -70,39 +98,11 @@ This script transforms the rarely-used **`Caps Lock`** key into an intuitive mom
 | **`Ctrl` + `Caps Lock` + `[J / L]`** | **Jump whole words** left or right |
 | **`Ctrl` + `Shift` + `Caps Lock` + `[J / L]`** | **Select whole words** across lines |
 
-### 3. Standard Caps Lock Toggling
+### 4. Smart Caps Lock & On-Screen Indicator
 
 * **Quick tap** on `Caps Lock` alone toggles CAPS LOCK ON / OFF.
 * Or press **`Shift` + `Caps Lock`** to toggle CAPS LOCK.
-
----
-
-## 🚀 Quick Start & Installation
-
-### Option A: 1-Click Automated PowerShell Install (Recommended)
-
-Clone this repository and run the included installer:
-
-```powershell
-git clone https://github.com/Solankarruturaj005/60-percent-keyboard-arrow-fix.git
-cd 60-percent-keyboard-arrow-fix
-powershell -ExecutionPolicy Bypass -File .\install.ps1
-```
-
-**What the installer does automatically:**
-1. Checks for [AutoHotkey v2](https://www.autohotkey.com/). If missing, it installs it silently via `winget`.
-2. Copies `60percent_navigation.ahk` to your **Windows Startup** folder (`shell:startup`).
-3. Launches the script immediately—it starts working in 1 second and automatically boots with Windows.
-
----
-
-### Option B: Manual Setup
-
-1. Install **[AutoHotkey v2](https://www.autohotkey.com/)** (v2.0 or newer).
-2. Download [`60percent_navigation.ahk`](60percent_navigation.ahk).
-3. Press `Win + R`, type `shell:startup`, and hit **Enter**.
-4. Paste `60percent_navigation.ahk` into the folder.
-5. Double-click the script to run it immediately.
+* **On-Screen Badge:** Whenever Caps Lock toggles, a sleek badge (`CAPS LOCK: ON` / `CAPS LOCK: OFF`) appears near the bottom-right corner for 1.2 seconds, solving the missing physical LED problem!
 
 ---
 
@@ -117,38 +117,34 @@ If you are using this specifically on the **Ant Esports MK1500 Mini**, check out
   `Fn + Q` (Profile 1) | `Fn + W` (Profile 2) | `Fn + E` (Profile 3).  
   *Hold for 3-5 seconds to initiate pairing.*
 * **RGB Controls:**  
-  * `Fn + Spacebar`: Toggle Backlight ON / OFF *(saves substantial battery!)*  
+  * `Fn + Spacebar`: Toggle Backlight ON / OFF *(saves battery from ~15 hrs to ~100 hrs!)*  
   * `Fn + \`: Cycle RGB modes & effects  
   * `Fn + ]` / `Fn + [`: Increase / Decrease Brightness  
   * `Fn + '` / `Fn + ;`: Increase / Decrease Animation Speed  
 
 ---
 
-## ⚙️ Customization
+## ⚙️ Customization & System Tray
 
-Want to tweak hotkeys or add custom shortcuts?  
-Open [`60percent_navigation.ahk`](60percent_navigation.ahk) in any code editor (VS Code, Notepad, etc.). All mappings are clean AutoHotkey v2 functions:
+Right-click the green **`H`** icon in your Windows taskbar notification area (near the clock) to:
+* **View Cheatsheet / GitHub Repo**
+* **Toggle CapsLock On-Screen Badge** (enable or disable)
+* **Suspend Hotkeys** (temporarily disable navigation layer)
+* **Reload Script**
 
-```autohotkey
-; Example: Add CapsLock + M as Enter key
-#HotIf GetKeyState("CapsLock", "P")
-*m::SendInput("{Blind}{Enter}")
-#HotIf
-```
-
-After modifying, save the file and right-click the green **`H`** icon in the Windows taskbar system tray > **Reload Script**.
+Want to edit shortcuts? Simply open [`60percent_navigation.ahk`](60percent_navigation.ahk) in VS Code or Notepad, edit any mapping, and select **Reload Script** from the tray icon.
 
 ---
 
 ## 🗑️ Uninstallation
 
-Run the included uninstaller script:
+Paste this in PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
+irm https://raw.githubusercontent.com/Solankarruturaj005/60-percent-keyboard-arrow-fix/main/uninstall.ps1 | iex
 ```
 
-Or manually delete `60percent_navigation.ahk` from `shell:startup` and exit the AutoHotkey tray icon.
+Or manually remove `60percent_navigation.ahk` from `shell:startup` and exit the AutoHotkey tray icon.
 
 ---
 
