@@ -11,8 +11,8 @@ Persistent(true)
 ; ==============================================================================
 ; MASTER KEYBOARD TOGGLE:
 ;   Press Win + CapsLock (or Ctrl + Alt + CapsLock) to toggle the layer ON / OFF.
-;   - When DISABLED (default on boot): Script is dormant. 100% normal stock keyboard.
-;   - When ENABLED: CapsLock navigation, smart tap, F-keys, and media layer are active.
+;   - When ENABLED (default on boot): CapsLock navigation, smart tap, F-keys, and media layer are active.
+;   - When DISABLED: Script is dormant. 100% normal stock keyboard.
 ;
 ; SHORTCUTS (While Layer is ENABLED & HOLDING CapsLock):
 ; ------------------------------------------------------------------------------
@@ -37,18 +37,24 @@ Persistent(true)
 ;
 ; NORMAL CAPSLOCK FUNCTION (While Layer is ENABLED):
 ;   - Quick tap of CapsLock toggles CAPS LOCK ON / OFF.
-;   - Or press Shift + CapsLock to toggle CAPS LOCK.
 ;   - Displays a Windows 11 translucent pill navbar at bottom-center of screen.
 ; ==============================================================================
 
 ; --- State & Sizing ---
-global isLayerActive := false
+global isLayerActive := true
+global isCapsHeld := false
 global isCapsLocked := false
 global lastToggleTick := 0
 global pillGui := ""
 global textCtrl := ""
 global pillWidth := 250
 global pillHeight := 46
+
+LogTrace(msg) {
+    try {
+        FileAppend(FormatTime(A_Now, "HH:mm:ss") . " | " . msg . "`n", "C:\Users\hp\Desktop\nav_trace.log")
+    }
+}
 
 InitPillGui() {
     global pillGui, textCtrl, pillWidth, pillHeight
@@ -68,7 +74,7 @@ InitPillGui() {
     textCtrl := pillGui.Add("Text", "Center x0 y12 w" . pillWidth . " h" . (pillHeight - 12))
 }
 
-ShowPillOSD(text, colorHex := "38bdf8", durationMs := 1300) {
+ShowPillOSD(text, colorHex := "38bdf8", durationMs := 1500) {
     global pillGui, textCtrl, pillWidth, pillHeight
     if (!pillGui)
         InitPillGui()
@@ -96,10 +102,12 @@ ToggleMasterLayer() {
         ; Explicitly ensure CapsLock state is OFF when activating
         SetCapsLockState "AlwaysOff"
         ShowPillOSD("⚡ 60% Layer: ENABLED", "38bdf8")
+        LogTrace("Master Layer ENABLED")
     } else {
         ; Restore normal keyboard mode, clean CapsLock state
         SetCapsLockState "Off"
         ShowPillOSD("💤 60% Layer: DISABLED", "94a3b8")
+        LogTrace("Master Layer DISABLED")
     }
     
     ; Force re-bind hook cleanly on every toggle
@@ -113,9 +121,11 @@ ToggleCapsState() {
     if (isCapsLocked) {
         SetCapsLockState "AlwaysOn"
         ShowPillOSD("🔒  CapsLock: ON", "38bdf8")
+        LogTrace("CapsLock toggled: ON")
     } else {
         SetCapsLockState "AlwaysOff"
         ShowPillOSD("🔓  CapsLock: OFF", "94a3b8")
+        LogTrace("CapsLock toggled: OFF")
     }
 }
 
@@ -139,7 +149,12 @@ OpenGitHub() {
 }
 
 SetupTrayMenu()
-A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/OFF"
+A_IconTip := "60% Keyboard Navigation Layer (Active)`nPress Win + CapsLock to Toggle ON/OFF"
+
+; Enable layer immediately on startup
+SetCapsLockState "AlwaysOff"
+ShowPillOSD("⚡ 60% Layer: ENABLED", "38bdf8", 2000)
+LogTrace("Navigation layer initialized and ACTIVE on startup")
 
 ; ------------------------------------------------------------------------------
 ; Master Keyboard Toggle Shortcuts (Always Active)
@@ -155,15 +170,16 @@ A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/O
 ; ------------------------------------------------------------------------------
 #HotIf isLayerActive
 
-; Shift + CapsLock toggles original CapsLock state
-+CapsLock::ToggleCapsState()
-
-; Suppress default CapsLock press on key-down
-*CapsLock::Return
+; Suppress default CapsLock press on key-down and track state
+*CapsLock:: {
+    global isCapsHeld := true
+    LogTrace("CapsLock DOWN")
+}
 
 ; Tap CapsLock alone without pressing any other key -> Toggles CapsLock
 *CapsLock up:: {
-    global lastToggleTick
+    global isCapsHeld := false, lastToggleTick
+    LogTrace("CapsLock UP | PriorKey=" . A_PriorKey)
     ; Debounce if master layer was just toggled
     if (A_TickCount - lastToggleTick < 400)
         return
@@ -171,13 +187,25 @@ A_IconTip := "60% Keyboard Navigation Layer`nPress Win + CapsLock to Toggle ON/O
         ToggleCapsState()
 }
 
-#HotIf isLayerActive and GetKeyState("CapsLock", "P")
+#HotIf isLayerActive and (isCapsHeld or GetKeyState("CapsLock", "P"))
 
 ; --- Right-hand Arrow Keys (Home Row) ---
-*i::SendInput("{Blind}{Up}")
-*j::SendInput("{Blind}{Left}")
-*k::SendInput("{Blind}{Down}")
-*l::SendInput("{Blind}{Right}")
+*i::{
+    LogTrace("Nav -> UP")
+    SendInput("{Blind}{Up}")
+}
+*j::{
+    LogTrace("Nav -> LEFT")
+    SendInput("{Blind}{Left}")
+}
+*k::{
+    LogTrace("Nav -> DOWN")
+    SendInput("{Blind}{Down}")
+}
+*l::{
+    LogTrace("Nav -> RIGHT")
+    SendInput("{Blind}{Right}")
+}
 
 ; --- Left-hand Arrow Keys (WASD) ---
 *w::SendInput("{Blind}{Up}")
@@ -234,6 +262,7 @@ RecoverHardwareState() {
     global isLayerActive, isCapsLocked
     ; Force re-installation of low-level keyboard hook
     InstallKeybdHook(true, true)
+    LogTrace("RecoverHardwareState: Keyboard hook reinstalled")
     
     ; Re-sync CapsLock state
     if (isCapsLocked) {
