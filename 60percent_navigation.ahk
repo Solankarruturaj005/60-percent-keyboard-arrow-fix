@@ -80,7 +80,7 @@ ShowCapsNotification(state) {
         textCtrl.Value := "🔓  CapsLock: OFF"
     }
     
-    MonitorGetWorkArea(,, &workLeft, &workTop, &workRight, &workBottom)
+    MonitorGetWorkArea(1, &workLeft, &workTop, &workRight, &workBottom)
     posX := workLeft + (workRight - workLeft - pillWidth) // 2
     posY := workBottom - pillHeight - 35 ; Bottom-centered above taskbar
     
