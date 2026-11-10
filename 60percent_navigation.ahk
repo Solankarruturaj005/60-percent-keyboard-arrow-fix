@@ -110,8 +110,6 @@ ToggleMasterLayer() {
         LogTrace("Master Layer DISABLED")
     }
     
-    ; Force re-bind hook cleanly on every toggle
-    InstallKeybdHook(true, true)
     SendInput("{Blind}{vkE8}")
 }
 
@@ -133,14 +131,13 @@ ToggleCapsState() {
 SetupTrayMenu() {
     tray := A_TrayMenu
     tray.Delete()
-    tray.Add("60% Keyboard Navigation Layer", (*) => OpenGitHub())
-    tray.Disable("60% Keyboard Navigation Layer")
+    tray.Add("60% Keyboard Navigation Layer (Active)", (*) => OpenGitHub())
+    tray.Disable("60% Keyboard Navigation Layer (Active)")
     tray.Add()
     tray.Add("Toggle Layer (Win + CapsLock)", (*) => ToggleMasterLayer())
-    tray.Add("Re-sync Keyboard Hook", (*) => RecoverHardwareState())
+    tray.Add("Reload Script", (*) => Reload())
     tray.Add("View Cheatsheet / GitHub", (*) => OpenGitHub())
     tray.Add()
-    tray.Add("Reload Script", (*) => Reload())
     tray.Add("Exit", (*) => ExitApp())
 }
 
@@ -155,6 +152,12 @@ A_IconTip := "60% Keyboard Navigation Layer (Active)`nPress Win + CapsLock to To
 SetCapsLockState "AlwaysOff"
 ShowPillOSD("⚡ 60% Layer: ENABLED", "38bdf8", 2000)
 LogTrace("Navigation layer initialized and ACTIVE on startup")
+
+; Universal Non-Blocking Key Sniffer for Diagnostics
+ih := InputHook("V L0 I0")
+ih.KeyOpt("{All}", "N")
+ih.OnKeyDown := (hook, vk, sc) => LogTrace("KEY: " . GetKeyName(Format("vk{:x}sc{:x}", vk, sc)) . " (vk=" . vk . ", sc=" . sc . ")")
+ih.Start()
 
 ; ------------------------------------------------------------------------------
 ; Master Keyboard Toggle Shortcuts (Always Active)
@@ -173,13 +176,13 @@ LogTrace("Navigation layer initialized and ACTIVE on startup")
 ; Suppress default CapsLock press on key-down and track state
 *CapsLock:: {
     global isCapsHeld := true
-    LogTrace("CapsLock DOWN")
+    LogTrace("-> CapsLock HELD")
 }
 
 ; Tap CapsLock alone without pressing any other key -> Toggles CapsLock
 *CapsLock up:: {
     global isCapsHeld := false, lastToggleTick
-    LogTrace("CapsLock UP | PriorKey=" . A_PriorKey)
+    LogTrace("-> CapsLock RELEASED | PriorKey=" . A_PriorKey)
     ; Debounce if master layer was just toggled
     if (A_TickCount - lastToggleTick < 400)
         return
@@ -191,19 +194,19 @@ LogTrace("Navigation layer initialized and ACTIVE on startup")
 
 ; --- Right-hand Arrow Keys (Home Row) ---
 *i::{
-    LogTrace("Nav -> UP")
+    LogTrace("-> NAV: UP")
     SendInput("{Blind}{Up}")
 }
 *j::{
-    LogTrace("Nav -> LEFT")
+    LogTrace("-> NAV: LEFT")
     SendInput("{Blind}{Left}")
 }
 *k::{
-    LogTrace("Nav -> DOWN")
+    LogTrace("-> NAV: DOWN")
     SendInput("{Blind}{Down}")
 }
 *l::{
-    LogTrace("Nav -> RIGHT")
+    LogTrace("-> NAV: RIGHT")
     SendInput("{Blind}{Right}")
 }
 
@@ -248,39 +251,14 @@ LogTrace("Navigation layer initialized and ACTIVE on startup")
 ; Hardware Disconnect / Reconnect / Bluetooth Sleep Auto-Recovery
 ; ------------------------------------------------------------------------------
 ; WM_DEVICECHANGE (0x0219) notification listener
-; Re-registers low-level keyboard hook whenever USB or Bluetooth keyboard reconnects
+; Reloads script cleanly whenever keyboard reconnects or wakes from sleep
 OnMessage(0x0219, OnDeviceChange)
 
 OnDeviceChange(wParam, lParam, msg, hwnd) {
-    ; DBT_DEVNODES_CHANGED = 0x0007, DBT_DEVICEARRIVAL = 0x8000, DBT_DEVICEREMOVECOMPLETE = 0x8004
-    ; Debounce by 400ms to let Windows driver & PnP stack settle before re-hooking
-    SetTimer(RecoverHardwareState, -400)
-    return true
-}
-
-RecoverHardwareState() {
-    global isLayerActive, isCapsLocked
-    ; Force re-installation of low-level keyboard hook
-    InstallKeybdHook(true, true)
-    LogTrace("RecoverHardwareState: Keyboard hook reinstalled")
-    
-    ; Re-sync CapsLock state
-    if (isCapsLocked) {
-        SetCapsLockState "AlwaysOn"
-    } else if (isLayerActive) {
-        SetCapsLockState "AlwaysOff"
-    } else {
-        SetCapsLockState "Off"
+    ; DBT_DEVICEARRIVAL = 0x8000, DBT_DEVNODES_CHANGED = 0x0007
+    if (wParam == 0x8000 || wParam == 0x0007) {
+        LogTrace("WM_DEVICECHANGE detected (wParam=" . wParam . "). Scheduling clean reload in 1.2s...")
+        SetTimer(() => Reload(), -1200)
     }
-}
-
-; ------------------------------------------------------------------------------
-; Periodic Keep-Alive Heartbeat Watchdog
-; ------------------------------------------------------------------------------
-; Checks every 15 seconds to ensure Windows does not silently drop WH_KEYBOARD_LL
-; after prolonged idle time (LowLevelHooksTimeout)
-SetTimer(WatchdogKeepAlive, 15000)
-
-WatchdogKeepAlive() {
-    InstallKeybdHook(true, false)
+    return true
 }
