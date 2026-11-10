@@ -24,38 +24,87 @@ jobs:
           # 1. Check known install locations for AutoHotkey v2
           $candidates = @(
             "C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe",
+            "C:\Program Files\AutoHotkey\v2\AutoHotkey32.exe",
             "C:\Program Files\AutoHotkey\AutoHotkey64.exe",
+            "C:\Program Files\AutoHotkey\AutoHotkey.exe",
             "C:\ProgramData\chocolatey\bin\AutoHotkey64.exe",
             "C:\ProgramData\chocolatey\bin\AutoHotkey.exe"
           )
 
           $ahk = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
-          # 2. Fall back to Get-Command safely with -ErrorAction SilentlyContinue
+          # Fallback: check PATH
           if (-not $ahk) {
-            $cmd = Get-Command AutoHotkey64.exe, AutoHotkey.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+            $cmd = Get-Command AutoHotkey64.exe, AutoHotkey.exe, AutoHotkey32.exe -ErrorAction SilentlyContinue | Select-Object -First 1
             if ($cmd) { $ahk = $cmd.Source }
           }
 
+          # Fallback: download official portable AutoHotkey v2 release directly if not found
           if (-not $ahk) {
-            Write-Error "AutoHotkey executable could not be found!"
+            Write-Host "AutoHotkey not found in standard paths. Downloading official portable v2 binary..."
+            $ahkDir = Join-Path $env:RUNNER_TEMP "ahk_v2"
+            New-Item -ItemType Directory -Path $ahkDir -Force | Out-Null
+            $zipPath = Join-Path $env:RUNNER_TEMP "ahk_v2.zip"
+            Invoke-WebRequest -Uri "https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.18/AutoHotkey_2.0.18.zip" -OutFile $zipPath
+            Expand-Archive -Path $zipPath -DestinationPath $ahkDir -Force
+            $ahk = Join-Path $ahkDir "AutoHotkey64.exe"
+          }
+
+          if (-not $ahk -or -not (Test-Path $ahk)) {
+            Write-Error "AutoHotkey v2 executable could not be found or downloaded!"
             exit 1
           }
 
-          Write-Host "Validating with: $ahk"
-          & $ahk --version
+          $version = (Get-Item $ahk).VersionInfo.ProductVersion
+          Write-Host "=========================================="
+          Write-Host "AutoHotkey binary: $ahk"
+          Write-Host "AutoHotkey version: $version"
+          Write-Host "=========================================="
 
-          # 3. Validate with /validate and /ErrorStdOut to capture output in CI logs
-          $output = & $ahk /validate /ErrorStdOut "60percent_navigation.ahk" 2>&1
-          $exitCode = $LASTEXITCODE
+          # 2. Syntax Validation Harness
+          # Note: AutoHotkey does NOT have '--version' or '/validate' CLI switches.
+          # Passing unsupported switches causes AHK to treat them as script filenames and fail.
+          # Furthermore, scripts with hotkeys stay resident (persistent) if run directly.
+          # We validate syntax cleanly by loading an #Include harness with /ErrorStdOut and calling ExitApp 0.
+          # If there are any syntax or compilation errors in 60percent_navigation.ahk,
+          # AutoHotkey will output the error to stderr and exit with a non-zero code.
+          $targetScript = (Resolve-Path "60percent_navigation.ahk").Path
+          $harnessPath = Join-Path $env:TEMP "ci_validate_harness.ahk"
+          $harnessContent = @"
+#Requires AutoHotkey v2.0
+#Include $targetScript
+ExitApp 0
+"@
+          [System.IO.File]::WriteAllText($harnessPath, $harnessContent)
 
-          if ($output) {
-            Write-Host $output
+          $stdoutFile = Join-Path $env:TEMP "ahk_stdout.txt"
+          $stderrFile = Join-Path $env:TEMP "ahk_stderr.txt"
+
+          $proc = Start-Process -FilePath $ahk `
+            -ArgumentList @("/ErrorStdOut", "`"$harnessPath`"") `
+            -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $stdoutFile `
+            -RedirectStandardError $stderrFile
+
+          $exitCode = $proc.ExitCode
+          $stderrOutput = if ((Test-Path $stderrFile) -and (Get-Item $stderrFile).Length -gt 0) { (Get-Content $stderrFile -Raw).Trim() } else { "" }
+          $stdoutOutput = if ((Test-Path $stdoutFile) -and (Get-Item $stdoutFile).Length -gt 0) { (Get-Content $stdoutFile -Raw).Trim() } else { "" }
+
+          # Clean up temporary test files
+          Remove-Item $harnessPath, $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
+
+          if ($stderrOutput) {
+            Write-Host "--- AHK Compiler / Parser Output ---"
+            Write-Host $stderrOutput
           }
 
-          if ($exitCode -ne 0) {
-            Write-Error "Syntax validation failed with exit code $exitCode!"
+          if ($stdoutOutput) {
+            Write-Host $stdoutOutput
+          }
+
+          if ($exitCode -ne 0 -or $stderrOutput) {
+            Write-Error "AutoHotkey syntax validation failed with exit code $exitCode!"
             exit 1
           }
 
-          Write-Host "AutoHotkey script syntax is 100% valid!"
+          Write-Host "AutoHotkey v2 script syntax is 100% valid!"
